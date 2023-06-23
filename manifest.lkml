@@ -6,7 +6,7 @@ constant: GA4_CONNECTION {
 }
 
 constant: GA4_SCHEMA {
-  value: "bigquery-public-data.ga4_obfuscated_sample_ecommerce"
+  value: "quickwin-cdp-test.ga4_sample_for_looker"
   export: override_optional
 }
 
