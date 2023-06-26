@@ -518,7 +518,11 @@ view: events {
     full_suggestions: yes
   }
 
-  # dimension: user_id
+  dimension: user_email {
+    type: string
+    sql: ${TABLE}.user_id ;;
+    full_suggestions: yes
+  }
 
 ## Measures
 
