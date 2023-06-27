@@ -6,7 +6,7 @@ constant: GA4_CONNECTION {
 }
 
 constant: GA4_SCHEMA {
-  value: "quickwin-cdp-test.ga4_sample_for_looker"
+  value: "quickwin-cdp-test.ga4_sample_for_quickwin_cdp"
   export: override_optional
 }
 

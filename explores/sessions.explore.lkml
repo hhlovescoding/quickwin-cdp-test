@@ -33,7 +33,7 @@ explore: sessions {
 
   join: user_segment {
     type: left_outer
-    sql_on: ${sessions.user_pseudo_id} = ${user_segment.user_pseudo_id} ;;
+    sql_on: ${sessions.user_id} = ${user_segment.user_id} ;;
     relationship: many_to_one
   }
 

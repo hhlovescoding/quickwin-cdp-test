@@ -15,6 +15,7 @@ view: user_segment {
       #https://gafourblock.cloud.looker.com/explore/ga4/sessions?qid=TNJNii9UxKynCJltMZZ0iv&toggle=fil
 
       explore_source: sessions {
+        column: user_id {}
         column: user_pseudo_id {}
         column: total_sessions {}
         column: total_purchase_revenue { field: events.total_purchase_revenue }
@@ -33,7 +34,9 @@ view: user_segment {
 
     extends: [user_segment_filters]
 
-    dimension: user_pseudo_id {hidden:yes primary_key:yes}
+
+    dimension: user_id {primary_key: yes}
+    dimension: user_pseudo_id {hidden:yes}
     dimension: total_sessions {
       hidden: yes
       label: "Sessions Sessions"
@@ -58,7 +61,7 @@ view: user_segment {
     group_label: "In Selected Timeframe"
     type: count_distinct
     allow_approximate_optimization: yes
-    sql: ${user_pseudo_id} ;;
+    sql: ${user_id} ;;
   }
 
   measure: retention_rate {

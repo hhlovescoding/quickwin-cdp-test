@@ -1,12 +1,14 @@
 view: user_previous_session {
     derived_table: {
       explore_source: sessions {
+        # changed to user_id
         column: sl_key {}
-        column: user_pseudo_id {}
+        column: user_id {}
+        # column: user_pseudo_id {}
         column: session_data_session_end_time {}
         column: session_data_session_start_time {}
         derived_column: prev_session_end_time {
-          sql: lag(session_data_session_end_time) over (partition by user_pseudo_id order by session_data_session_start_time) ;;
+          sql: lag(session_data_session_end_time) over (partition by user_id order by session_data_session_start_time) ;;
         }
       }
     }

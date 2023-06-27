@@ -9,22 +9,22 @@ view: sessions {
     increment_key: "session_date"
     increment_offset: 3
     sql: with
--- obtains a list of sessions, uniquely identified by the table date, ga_session_id event parameter, ga_session_number event parameter, and the user_pseudo_id.
+-- obtains a list of sessions, uniquely identified by the table date, ga_session_id event parameter, ga_session_number event parameter, user_id and the user_pseudo_id.
 session_list_with_event_history as (
   select timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+'))) session_date
       ,  (select value.int_value from UNNEST(events.event_params) where key = "ga_session_id") ga_session_id
       ,  (select value.int_value from UNNEST(events.event_params) where key = "ga_session_number") ga_session_number
       ,  events.user_pseudo_id
       -- unique key for session:
-      ,  timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id sl_key
-      ,  row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id) order by events.event_timestamp) event_rank
-      ,  (TIMESTAMP_DIFF(TIMESTAMP_MICROS(LEAD(events.event_timestamp) OVER (PARTITION BY timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id ORDER BY events.event_timestamp asc))
+      ,  timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id sl_key
+      ,  row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id) order by events.event_timestamp) event_rank
+      ,  (TIMESTAMP_DIFF(TIMESTAMP_MICROS(LEAD(events.event_timestamp) OVER (PARTITION BY timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id ORDER BY events.event_timestamp asc))
          ,TIMESTAMP_MICROS(events.event_timestamp),second)/86400.0) time_to_next_event
-      , case when events.event_name = 'page_view' then row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id), case when events.event_name = 'page_view' then true else false end order by events.event_timestamp)
+      , case when events.event_name = 'page_view' then row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id), case when events.event_name = 'page_view' then true else false end order by events.event_timestamp)
         else 0 end as page_view_rank
-      , case when events.event_name = 'page_view' then row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id), case when events.event_name = 'page_view' then true else false end order by events.event_timestamp desc)
+      , case when events.event_name = 'page_view' then row_number() over (partition by (timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id), case when events.event_name = 'page_view' then true else false end order by events.event_timestamp desc)
         else 0 end as page_view_reverse_rank
-      , case when events.event_name = 'page_view' then (TIMESTAMP_DIFF(TIMESTAMP_MICROS(LEAD(events.event_timestamp) OVER (PARTITION BY timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_pseudo_id , case when events.event_name = 'page_view' then true else false end ORDER BY events.event_timestamp asc))
+      , case when events.event_name = 'page_view' then (TIMESTAMP_DIFF(TIMESTAMP_MICROS(LEAD(events.event_timestamp) OVER (PARTITION BY timestamp(PARSE_DATE('%Y%m%d', REGEXP_EXTRACT(_TABLE_SUFFIX,r'[0-9]+')))||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_id")||(select value.int_value from UNNEST(events.event_params) where key = "ga_session_number")||events.user_id||events.user_pseudo_id , case when events.event_name = 'page_view' then true else false end ORDER BY events.event_timestamp asc))
          ,TIMESTAMP_MICROS(events.event_timestamp),second)/86400.0) else null end as time_to_next_page -- this window function yields 0 duration results when session page_view count = 1.
       -- raw event data:
       , events.event_date
@@ -36,7 +36,6 @@ session_list_with_event_history as (
       , events.event_bundle_sequence_id
       , events.event_server_timestamp_offset
       , events.user_id
-      -- , events.user_pseudo_id
       , events.user_properties
       , events.user_first_touch_timestamp
       , events.user_ltv
@@ -119,6 +118,7 @@ session_event_packing as (
   select sl.session_date session_date
       ,  sl.ga_session_id ga_session_id
       ,  sl.ga_session_number ga_session_number
+      ,  sl.user_id user_id
       ,  sl.user_pseudo_id user_pseudo_id
       ,  sl.sl_key
       ,  ARRAY_AGG(STRUCT(  sl.sl_key
@@ -150,13 +150,14 @@ session_event_packing as (
                           , sl.ecommerce
                           , sl.items)) event_data
   from session_list_with_event_history sl
-  group by 1,2,3,4,5
+  group by 1,2,3,4,5,6
   )
 
 -- Final Select Statement:
 select se.session_date session_date
     ,  se.ga_session_id ga_session_id
     ,  se.ga_session_number ga_session_number
+    ,  se.user_id user_id
     ,  se.user_pseudo_id user_pseudo_id
     ,  se.sl_key
     -- packing session-level data into structs by category
@@ -263,6 +264,11 @@ extends: [event_funnel, page_funnel]
     tiers: [1,2,5,10,15,20,50,100]
     style: integer
     sql: ${ga_session_number} ;;
+  }
+
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: user_pseudo_id {
@@ -944,34 +950,37 @@ extends: [event_funnel, page_funnel]
     value_format_name: hour_format
   }
 
+  # changed to user_id
   measure: total_users {
     view_label: "Audience"
     group_label: "User"
     label: "Users"
     description: "Distinct/Unique count of Users"
     type: count_distinct
-    sql: ${user_pseudo_id} ;;
+    sql: ${user_id} ;;
     value_format_name: formatted_number
   }
 
+  # changed to user_id
   measure: total_new_users {
     view_label: "Audience"
     group_label: "User"
     label: "New Users"
     description: "Distinct/Unique count of User Pseudo ID where GA Session Number = 1"
     type: count_distinct
-    sql: ${user_pseudo_id} ;;
+    sql: ${user_id} ;;
     filters: [session_data_is_first_visit_session: "yes"]
     value_format_name: formatted_number
   }
 
+  # changed to user_id
   measure: total_returning_users {
     view_label: "Audience"
     group_label: "User"
     label: "Returning Users"
     description: "Distinct/Unique count of User Pseudo ID where GA Session Number > 1"
     type: count_distinct
-    sql: ${user_pseudo_id} ;;
+    sql: ${user_id} ;;
     filters: [session_data_is_first_visit_session: "no"]
     value_format_name: formatted_number
   }
